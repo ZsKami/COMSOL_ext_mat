@@ -1,16 +1,26 @@
 # 如何编写自定义的外部材料库
-
-.c
-
-.dll
-
+## 步骤
+### 写源代码并编译
+源码以 c 或 fortran 语言写成 .c 或 .f 等文件，利用编译器编译为 .dll 文件，以 c 语言为例：
+gcc -shared -o file_name.dll src_name.c
+### DLL 导入 COMSOL
+在全局材料中，建立外部材料。
+1. 导入模型的库
+2. 接口类型选择： 一般为广义应力-应变关系
+```
 接口类型（Interface Type）：
 - 广义应力-应变关系
 - 广义应力-变形关系
 - 非弹性残余应变
 - 非弹性残余变形
+```
+3. 状态基本名称和状态数（对应程序中的`int *nStates1`、`double *states1`等）
+若有初始值，进行初始化。
+4. 材料属性明细/属性组定义
+分为两类，基本(def)和广义应力-应变关系（comcomsolgeneralStressStrain），后者的材料模型参数对应`int *nPar`、`double *par`。
+> 注意：模型参数与状态变量不同。模型参数为定值，状态变量包含初始值和程序中自定义的更新算法。
 
-
+## 案例分析
 以下三个案例均定义广义应力-应变关系：  
 共有：
 - e，Green-Lagrange strain tensor
@@ -23,7 +33,7 @@
 
 
 
-## case1. Linear_elastic
+### case1. Linear_elastic
 定义：
 ```c
 EXPORT int eval(double e[6],         // Input: Green-Lagrange strain tensor components in Voigt order (xx,yy,zz,yz,zx,xy)
@@ -35,7 +45,7 @@ EXPORT int eval(double e[6],         // Input: Green-Lagrange strain tensor comp
                 double *states) {;}  // States, nStates-vector
 ```
 
-## case2. Linear_hardening
+### case2. Linear_hardening
 ```c
 EXPORT int eval(double e[6],         // Input: Green-Lagrange strain tensor components in Voigt order (xx,yy,zz,yz,zx,xy)
                 double s[6],         // Output: Second Piola-Kirchhoff stress components in Voigt order (xx,yy,zz,yz,zx,xy)
@@ -50,7 +60,7 @@ EXPORT int eval(double e[6],         // Input: Green-Lagrange strain tensor comp
                 double *states3) {;}   // Internal state: Plastic work
 ```
 
-## case3. Mazars_damage
+### case3. Mazars_damage
 ```c
 EXPORT int eval(double e[6],       // Input: Green-Lagrange strain tensor components in Voigt order (xx,yy,zz,yz,zx,xy)
                 double s[6],       // Output: Second Piola-Kirchhoff stress components in Voigt order (xx,yy,zz,yz,zx,xy)
